@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-python-consumer
+  namespace: kafka-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: kafka-python-consumer }
+  template:
+    metadata:
+      labels: { app: kafka-python-consumer }
+    spec:
+      containers:
+        - name: consumer
+          image: jiveshdhakate04/kafka-python-consumer:v1
+          env:
+            - name: BOOTSTRAP_SERVERS
+              value: kafka.kafka-demo.svc.cluster.local:9092
+            - name: TOPIC
+              value: my_topic
+            - name: GROUP_ID
+              value: demo_group

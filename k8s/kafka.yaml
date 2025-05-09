@@ -1,0 +1,73 @@
+# --------------------------------------------------------------------
+# Kafka - single-node KRaft (controller + broker)
+# --------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: kafka-demo
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1          # keep only the last RS
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: bitnami/kafka:latest        # 4.x → KRaft mode
+          env:
+            # ----- KRaft role & node id -----
+            - name: KAFKA_CFG_PROCESS_ROLES
+              value: controller,broker
+            - name: KAFKA_CFG_NODE_ID
+              value: "0"
+
+            # ----- Listeners -----
+            - name: KAFKA_CFG_LISTENERS
+              value: PLAINTEXT://:9092,CONTROLLER://:9093
+            - name: KAFKA_CFG_ADVERTISED_LISTENERS
+              value: PLAINTEXT://kafka.kafka-demo.svc.cluster.local:9092
+            - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
+              value: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+
+            # ----- Controller quorum (self) -----
+            - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
+              value: 0@kafka.kafka-demo.svc.cluster.local:9093
+            - name: KAFKA_CFG_CONTROLLER_LISTENER_NAMES
+              value: CONTROLLER
+
+          ports:
+            - name: client
+              containerPort: 9092
+            - name: controller
+              containerPort: 9093
+          # (optional) very light resource hints
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+---
+# --------------------------------------------------------------------
+# Service exposing both client & controller ports
+# --------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: kafka-demo
+spec:
+  selector:
+    app: kafka
+  ports:
+    - name: client
+      port: 9092
+      targetPort: 9092
+    - name: controller
+      port: 9093
+      targetPort: 9093
+  type: ClusterIP

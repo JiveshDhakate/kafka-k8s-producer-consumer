@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-python-producer
+  namespace: kafka-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-python-producer
+  template:
+    metadata:
+      labels:
+        app: kafka-python-producer
+    spec:
+      containers:
+        - name: producer
+          image: jiveshdhakate04/kafka-python-producer:v2 
+          env:
+            - name: BOOTSTRAP_SERVERS
+              value: kafka.kafka-demo.svc.cluster.local:9092
+            - name: TOPIC
+              value: my_topic
+            - name: COUNT
+              value: "5"
